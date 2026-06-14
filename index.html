@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexusAI - Login</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #0d0d0d;
+  color: #fff;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.container { width:100%; max-width:420px; padding:20px; }
+.logo { text-align:center; margin-bottom:32px; }
+.logo h1 {
+  font-size:2rem;
+  background:linear-gradient(135deg,#7c3aed,#06b6d4);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  font-weight:800;
+}
+.logo p { color:#888; font-size:0.85rem; margin-top:4px; }
+.card { background:#1a1a1a; border:1px solid #2a2a2a; border-radius:16px; padding:32px; }
+.tabs { display:flex; background:#111; border-radius:10px; padding:4px; margin-bottom:24px; }
+.tab { flex:1; padding:10px; text-align:center; border-radius:8px; cursor:pointer; font-size:0.9rem; color:#888; transition:all 0.2s; border:none; background:none; }
+.tab.active { background:#7c3aed; color:#fff; font-weight:600; }
+.form-group { margin-bottom:16px; }
+label { display:block; font-size:0.8rem; color:#aaa; margin-bottom:6px; }
+input { width:100%; padding:12px 14px; background:#111; border:1px solid #2a2a2a; border-radius:10px; color:#fff; font-size:0.95rem; outline:none; transition:border 0.2s; }
+input:focus { border-color:#7c3aed; }
+.btn { width:100%; padding:13px; border:none; border-radius:10px; cursor:pointer; font-size:1rem; font-weight:600; margin-top:8px; transition:all 0.2s; }
+.btn-primary { background:linear-gradient(135deg,#7c3aed,#06b6d4); color:#fff; }
+.btn-primary:hover { opacity:0.9; }
+.btn-primary:disabled { opacity:0.5; cursor:not-allowed; }
+.msg { font-size:0.82rem; margin-top:12px; text-align:center; }
+.msg.error { color:#f87171; }
+.msg.success { color:#34d399; }
+.id-display { background:#111; border:1px solid #7c3aed44; border-radius:10px; padding:14px; text-align:center; margin-top:16px; }
+.id-display .label { color:#888; font-size:0.75rem; margin-bottom:6px; }
+.id-display .id-val { font-family:monospace; font-size:1.2rem; color:#7c3aed; letter-spacing:2px; font-weight:700; }
+.countdown { color:#06b6d4; font-size:0.8rem; margin-top:6px; }
+.hidden { display:none !important; }
+.hint { font-size:0.75rem; color:#555; text-align:center; margin-top:16px; }
+hr { border:none; border-top:1px solid #222; margin:20px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="logo">
+    <h1>⚡ NexusAI</h1>
+    <p>AI Chat Cerdas — Semua Dalam Satu</p>
+  </div>
+  <div class="card">
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('login')">Masuk</button>
+      <button class="tab" onclick="showTab('register')">Buat ID</button>
+    </div>
+    <div id="login-form">
+      <div class="form-group">
+        <label>User ID</label>
+        <input type="text" id="login-id" placeholder="Masukkan ID kamu..." maxlength="10">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-pw" placeholder="Password..." onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()">Masuk</button>
+      <div id="login-msg" class="msg"></div>
+      <p class="hint">Belum punya ID? Klik "Buat ID" di atas</p>
+    </div>
+    <div id="register-form" class="hidden">
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="reg-username" placeholder="Pilih username..." maxlength="20">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="reg-pw" placeholder="Buat password...">
+      </div>
+      <div class="form-group">
+        <label>Konfirmasi Password</label>
+        <input type="password" id="reg-pw2" placeholder="Ulangi password..." onkeydown="if(event.key==='Enter')doRegister()">
+      </div>
+      <button class="btn btn-primary" id="reg-btn" onclick="doRegister()">Buat ID</button>
+      <div id="reg-msg" class="msg"></div>
+      <div id="id-result" class="hidden">
+        <hr>
+        <div class="id-display">
+          <div class="label">ID Kamu (simpan baik-baik!)</div>
+          <div class="id-val" id="gen-id">----</div>
+          <div class="countdown" id="cd-text"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function showTab(t){
+  document.querySelectorAll('.tab').forEach((el,i)=>{
+    el.classList.toggle('active',(i===0&&t==='login')||(i===1&&t==='register'));
+  });
+  document.getElementById('login-form').classList.toggle('hidden',t!=='login');
+  document.getElementById('register-form').classList.toggle('hidden',t!=='register');
+}
+function getUsers(){return JSON.parse(localStorage.getItem('nexusai_users')||'{}');}
+function saveUsers(u){localStorage.setItem('nexusai_users',JSON.stringify(u));}
+function genID(){
+  const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let id='';
+  for(let i=0;i<8;i++)id+=c[Math.floor(Math.random()*c.length)];
+  return id;
+}
+function doRegister(){
+  const un=document.getElementById('reg-username').value.trim();
+  const pw=document.getElementById('reg-pw').value;
+  const pw2=document.getElementById('reg-pw2').value;
+  const msg=document.getElementById('reg-msg');
+  if(!un||!pw){msg.className='msg error';msg.textContent='Username & password wajib!';return;}
+  if(pw!==pw2){msg.className='msg error';msg.textContent='Password tidak cocok!';return;}
+  if(pw.length<4){msg.className='msg error';msg.textContent='Password min 4 karakter!';return;}
+  const users=getUsers();
+  if(Object.values(users).find(u=>u.username===un)){msg.className='msg error';msg.textContent='Username sudah dipakai!';return;}
+  const btn=document.getElementById('reg-btn');
+  btn.disabled=true;btn.textContent='Membuat ID...';
+  msg.className='msg success';msg.textContent='Harap tunggu...';
+  setTimeout(()=>{
+    let newID;
+    do{newID=genID();}while(users[newID]);
+    users[newID]={username:un,password:pw,created:Date.now()};
+    saveUsers(users);
+    document.getElementById('gen-id').textContent=newID;
+    document.getElementById('id-result').classList.remove('hidden');
+    msg.textContent='';
+    let secs=5;
+    const cd=document.getElementById('cd-text');
+    cd.textContent='Login otomatis dalam '+secs+' detik...';
+    const iv=setInterval(()=>{
+      secs--;
+      if(secs<=0){
+        clearInterval(iv);
+        localStorage.setItem('nexusai_session',JSON.stringify({id:newID,username:un}));
+        window.location.href='chat.html';
+      }else{cd.textContent='Login otomatis dalam '+secs+' detik...';}
+    },1000);
+    btn.textContent='Berhasil!';
+  },1500);
+}
+function doLogin(){
+  const id=document.getElementById('login-id').value.trim().toUpperCase();
+  const pw=document.getElementById('login-pw').value;
+  const msg=document.getElementById('login-msg');
+  if(!id||!pw){msg.className='msg error';msg.textContent='ID & password wajib!';return;}
+  const users=getUsers();
+  if(!users[id]){msg.className='msg error';msg.textContent='ID tidak ditemukan!';return;}
+  if(users[id].password!==pw){msg.className='msg error';msg.textContent='Password salah!';return;}
+  localStorage.setItem('nexusai_session',JSON.stringify({id,username:users[id].username}));
+  window.location.href='chat.html';
+}
+if(localStorage.getItem('nexusai_session'))window.location.href='chat.html';
+</script>
+</body>
+</html>
