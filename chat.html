@@ -20,8 +20,7 @@ body{font-family:'Segoe UI',sans-serif;background:#0d0d0d;color:#e5e5e5;height:1
 .history-item:hover .del-btn{display:inline;}
 .del-btn:hover{color:#f87171;}
 .sidebar-footer{padding:12px;border-top:1px solid #1e1e1e;}
-.user-info{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;cursor:pointer;transition:background 0.2s;}
-.user-info:hover{background:#1a1a1a;}
+.user-info{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;}
 .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#06b6d4);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;flex-shrink:0;}
 .user-details .name{font-size:0.85rem;font-weight:600;color:#ddd;}
 .user-details .uid{font-size:0.7rem;color:#666;font-family:monospace;}
@@ -144,7 +143,7 @@ textarea#msg-input::placeholder{color:#444;}
         <button class="sug-btn" onclick="quickSend('Ajarin saya Python dari dasar')"><span class="sug-icon">🐍</span>Ajarin saya Python dari dasar</button>
         <button class="sug-btn" onclick="quickSend('Bikin website simple HTML CSS JS')"><span class="sug-icon">🌐</span>Bikin website HTML CSS JS</button>
         <button class="sug-btn" onclick="quickSend('Jelaskan cara kerja AI secara mudah')"><span class="sug-icon">🤖</span>Jelaskan cara kerja AI</button>
-        <button class="sug-btn" onclick="quickSend('Cek link ini apakah aman atau tidak')"><span class="sug-icon">🔗</span>Cek link apakah aman</button>
+        <button class="sug-btn" onclick="quickSend('Cek link ini apakah aman atau tidak: https://example.com')"><span class="sug-icon">🔗</span>Cek link apakah aman</button>
       </div>
     </div>
   </div>
@@ -154,12 +153,12 @@ textarea#msg-input::placeholder{color:#444;}
       <div class="input-row">
         <textarea id="msg-input" placeholder="Ketik pesan... (Enter kirim, Shift+Enter baris baru)" rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
         <div style="display:flex;gap:4px;flex-shrink:0;">
-          <button class="attach-btn" onclick="document.getElementById('file-input').click()" title="Lampirkan file">📎</button>
+          <button class="attach-btn" onclick="document.getElementById('file-input').click()">📎</button>
           <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
         </div>
       </div>
     </div>
-    <p class="input-hint">Ketik /save simpan chat • /help bantuan • 📎 untuk lampir foto/video/file</p>
+    <p class="input-hint">Ketik /save simpan chat • /help bantuan • 📎 lampir foto/video/file</p>
     <input type="file" id="file-input" multiple accept="image/*,video/*,.pdf,.txt,.js,.py,.html,.css,.json,.csv,.md" style="display:none" onchange="handleFiles(event)">
   </div>
 </div>
@@ -188,7 +187,7 @@ textarea#msg-input::placeholder{color:#444;}
     <div class="help-section">
       <h4>🧠 Kemampuan AI</h4>
       <ul>
-        <li>Python, JavaScript, HTML/CSS, dan 50+ bahasa</li>
+        <li>Python, JavaScript, HTML/CSS, 50+ bahasa</li>
         <li>Analisis & cek keamanan URL/link</li>
         <li>Matematika, Fisika, Kimia, Biologi, Sejarah</li>
         <li>Tulis cerita, puisi, artikel</li>
@@ -199,6 +198,10 @@ textarea#msg-input::placeholder{color:#444;}
   </div>
 </div>
 <script>
+// ===== GANTI API KEY KAMU DI SINI =====
+const OPENROUTER_KEY = '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';
+// =======================================
+
 const session=JSON.parse(localStorage.getItem('nexusai_session')||'null');
 if(!session)window.location.href='index.html';
 const userName=session?.username||'User';
@@ -258,7 +261,7 @@ function newChat(){
       <button class="sug-btn" onclick="quickSend('Ajarin saya Python dari dasar')"><span class="sug-icon">🐍</span>Ajarin saya Python dari dasar</button>
       <button class="sug-btn" onclick="quickSend('Bikin website simple HTML CSS JS')"><span class="sug-icon">🌐</span>Bikin website HTML CSS JS</button>
       <button class="sug-btn" onclick="quickSend('Jelaskan cara kerja AI secara mudah')"><span class="sug-icon">🤖</span>Jelaskan cara kerja AI</button>
-      <button class="sug-btn" onclick="quickSend('Cek link ini apakah aman atau tidak')"><span class="sug-icon">🔗</span>Cek link apakah aman</button>
+      <button class="sug-btn" onclick="quickSend('Cek link ini apakah aman: https://example.com')"><span class="sug-icon">🔗</span>Cek link apakah aman</button>
     </div>
   </div>`;
   document.getElementById('chat-title').textContent='NexusAI';
@@ -292,7 +295,7 @@ async function sendMessage(){
     currentMessages.push(aiObj);appendMsgDOM('ai',aiReply,[],aiTime,true);saveCurrent();
   }catch(e){
     typingEl.remove();
-    const err='Maaf ada kesalahan: '+e.message;
+    const err='Maaf ada kesalahan: '+e.message+'. Pastikan API key sudah diisi dengan benar!';
     currentMessages.push({role:'ai',content:err,files:[],time:new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})});
     appendMsgDOM('ai',err,[],new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),true);
     saveCurrent();
@@ -300,38 +303,48 @@ async function sendMessage(){
   isTyping=false;document.getElementById('send-btn').disabled=false;
 }
 function quickSend(t){document.getElementById('msg-input').value=t;sendMessage();}
+
 async function callAI(userText,files){
+  if(OPENROUTER_KEY==='sk-or-v1-APIKEY-KAMU-DISINI'){
+    throw new Error('API Key belum diisi! Buka openrouter.ai, daftar gratis, ambil key, lalu isi di kode chat.html');
+  }
   const sys=`Kamu adalah NexusAI, asisten AI cerdas berbahasa Indonesia yang sangat membantu.
-Kamu menguasai: Python, JavaScript, TypeScript, Java, C/C++, Go, PHP, dan semua bahasa pemrograman. Web dev: HTML, CSS, React, Vue, Node.js. Database: SQL, MongoDB. AI/ML: Machine Learning, Deep Learning, NLP. Data Science: Pandas, NumPy, TensorFlow. Matematika, Fisika, Kimia, Biologi, Sejarah. Analisis dan cek keamanan URL/link. Kreativitas: cerita, puisi, artikel. Bisnis: strategi, marketing.
-Saat ada link/URL: jelaskan apakah terlihat aman berdasarkan struktur dan domain.
-Gunakan format markdown. Jawab bahasa Indonesia kecuali diminta lain. Selalu ramah dan informatif.`;
-  const apiMsgs=[];
+Kamu menguasai: Python, JavaScript, TypeScript, Java, C/C++, Go, PHP, dan semua bahasa pemrograman. Web dev: HTML, CSS, React, Vue, Node.js. Database: SQL, MongoDB, PostgreSQL. AI/ML: Machine Learning, Deep Learning, NLP, Computer Vision. Data Science: Pandas, NumPy, TensorFlow, PyTorch. Matematika, Fisika, Kimia, Biologi, Sejarah, Geografi. Analisis dan cek keamanan URL/link. Kreativitas: cerita, puisi, artikel, konten. Bisnis: strategi, marketing, analisis.
+Saat ada link/URL: jelaskan apakah terlihat aman berdasarkan struktur domain dan pola URL.
+Gunakan format markdown untuk respons terstruktur. Jawab bahasa Indonesia kecuali diminta lain. Selalu ramah, helpful, dan informatif.`;
+
+  const apiMsgs=[{role:'system',content:sys}];
   currentMessages.slice(-11,-1).forEach(m=>{
-    if(m.role==='user')apiMsgs.push({role:'user',content:m.content||'(file)'});
+    if(m.role==='user')apiMsgs.push({role:'user',content:m.content||'(file dikirim)'});
     else apiMsgs.push({role:'assistant',content:m.content});
   });
-  let content=[];
-  if(userText)content.push({type:'text',text:userText});
+
+  let msgContent=userText||'';
   files.forEach(f=>{
-    if(f.type?.startsWith('image/')&&f.data){
-      content.push({type:'image',source:{type:'base64',media_type:f.type,data:f.data}});
-    }else if(f.text){
-      content.push({type:'text',text:`[File: ${f.name}]\n\`\`\`\n${f.text}\n\`\`\``});
-    }else{
-      content.push({type:'text',text:`[File: ${f.name} (${f.type})]`});
-    }
+    if(f.text)msgContent+=`\n\n[File: ${f.name}]\n\`\`\`\n${f.text}\n\`\`\``;
+    else if(f.name)msgContent+=`\n\n[File dilampirkan: ${f.name}]`;
   });
-  if(!content.length)content.push({type:'text',text:'(file dikirim)'});
-  apiMsgs.push({role:'user',content:content.length===1&&content[0].type==='text'?content[0].text:content});
-  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+  apiMsgs.push({role:'user',content:msgContent||'halo'});
+
+  const resp=await fetch('https://openrouter.ai/api/v1/chat/completions',{
     method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:sys,messages:apiMsgs})
+    headers:{
+      'Content-Type':'application/json',
+      'Authorization':'Bearer '+OPENROUTER_KEY,
+      'HTTP-Referer':'https://nexusai.app',
+      'X-Title':'NexusAI'
+    },
+    body:JSON.stringify({
+      model:'meta-llama/llama-3.1-8b-instruct:free',
+      messages:apiMsgs,
+      max_tokens:2000
+    })
   });
   if(!resp.ok){const err=await resp.json();throw new Error(err.error?.message||'Error '+resp.status);}
   const data=await resp.json();
-  return data.content.map(b=>b.text||'').join('');
+  return data.choices[0].message.content;
 }
+
 function appendMsgDOM(role,content,files,time,scroll){
   const area=document.getElementById('chat-area');
   const div=document.createElement('div');div.className='message '+role;
@@ -343,7 +356,7 @@ function appendMsgDOM(role,content,files,time,scroll){
     else if(f.name)filesHTML+=`<div class="msg-file">📄 ${escHtml(f.name)}</div>`;
   });
   const fc=role==='ai'?formatAI(content):`<p>${escHtml(content).replace(/\n/g,'<br>')}</p>`;
-  const safeContent=content.replace(/\\/g,'\\\\').replace(/`/g,"'");
+  const safeContent=(content||'').replace(/\\/g,'\\\\').replace(/`/g,"'").replace(/"/g,"'");
   div.innerHTML=`${av}<div style="flex:1"><div class="msg-content">${filesHTML}${fc}</div><div class="msg-meta"><span>${time}</span><span class="copy-msg" onclick="copyText(this,\`${safeContent}\`)">📋 Salin</span></div></div>`;
   area.appendChild(div);if(scroll)area.scrollTop=area.scrollHeight;
 }
