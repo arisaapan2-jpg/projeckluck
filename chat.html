@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexusAI - Chat</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',sans-serif;background:#0d0d0d;color:#e5e5e5;height:100vh;display:flex;overflow:hidden;}
+.sidebar{width:260px;background:#111;border-right:1px solid #1e1e1e;display:flex;flex-direction:column;flex-shrink:0;transition:transform 0.3s;}
+.sidebar-top{padding:16px;border-bottom:1px solid #1e1e1e;}
+.logo-small{font-size:1.1rem;font-weight:800;background:linear-gradient(135deg,#7c3aed,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.new-chat-btn{width:100%;margin-top:12px;padding:10px;background:#7c3aed22;border:1px solid #7c3aed55;border-radius:10px;color:#c4b5fd;font-size:0.88rem;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;transition:all 0.2s;}
+.new-chat-btn:hover{background:#7c3aed44;}
+.chat-history{flex:1;overflow-y:auto;padding:8px;}
+.sidebar-label{font-size:0.7rem;color:#555;text-transform:uppercase;letter-spacing:1px;padding:8px 4px 4px;}
+.history-item{padding:9px 12px;border-radius:8px;cursor:pointer;font-size:0.82rem;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:all 0.15s;display:flex;align-items:center;justify-content:space-between;gap:6px;}
+.history-item:hover,.history-item.active{background:#1a1a1a;color:#fff;}
+.del-btn{font-size:0.7rem;color:#555;cursor:pointer;padding:2px 5px;border-radius:4px;flex-shrink:0;display:none;background:none;border:none;}
+.history-item:hover .del-btn{display:inline;}
+.del-btn:hover{color:#f87171;}
+.sidebar-footer{padding:12px;border-top:1px solid #1e1e1e;}
+.user-info{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;cursor:pointer;transition:background 0.2s;}
+.user-info:hover{background:#1a1a1a;}
+.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#06b6d4);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;flex-shrink:0;}
+.user-details .name{font-size:0.85rem;font-weight:600;color:#ddd;}
+.user-details .uid{font-size:0.7rem;color:#666;font-family:monospace;}
+.logout-btn{width:100%;margin-top:8px;padding:8px;background:none;border:1px solid #2a2a2a;border-radius:8px;color:#888;font-size:0.8rem;cursor:pointer;transition:all 0.2s;}
+.logout-btn:hover{border-color:#f87171;color:#f87171;}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{padding:12px 20px;border-bottom:1px solid #1e1e1e;display:flex;align-items:center;justify-content:space-between;background:#0d0d0d;}
+.topbar-title{font-size:0.9rem;color:#888;}
+.icon-btn{padding:7px 10px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;color:#aaa;font-size:0.8rem;cursor:pointer;transition:all 0.2s;white-space:nowrap;margin-left:6px;}
+.icon-btn:hover{background:#222;color:#fff;}
+.chat-area{flex:1;overflow-y:auto;padding:20px;scroll-behavior:smooth;}
+.welcome{text-align:center;padding:60px 20px;}
+.welcome h2{font-size:1.8rem;font-weight:700;background:linear-gradient(135deg,#7c3aed,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px;}
+.welcome p{color:#666;font-size:0.9rem;}
+.suggestions{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:600px;margin:30px auto 0;}
+.sug-btn{padding:14px;background:#1a1a1a;border:1px solid #252525;border-radius:12px;color:#ccc;font-size:0.82rem;cursor:pointer;text-align:left;transition:all 0.2s;line-height:1.4;}
+.sug-btn:hover{background:#222;border-color:#7c3aed55;color:#fff;}
+.sug-icon{font-size:1rem;margin-bottom:4px;display:block;}
+.message{max-width:800px;margin:0 auto 20px;display:flex;gap:12px;align-items:flex-start;}
+.msg-avatar{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;}
+.user .msg-avatar{background:linear-gradient(135deg,#7c3aed,#06b6d4);}
+.ai .msg-avatar{background:#1a1a1a;border:1px solid #2a2a2a;color:#7c3aed;font-size:1rem;}
+.msg-content{flex:1;padding:12px 16px;border-radius:12px;font-size:0.9rem;line-height:1.65;}
+.user .msg-content{background:#1a1a2e;border:1px solid #2a2a4a;}
+.ai .msg-content{background:#141414;border:1px solid #1e1e1e;}
+.msg-content pre{background:#0d0d0d;border:1px solid #252525;border-radius:8px;padding:12px;margin:10px 0;overflow-x:auto;font-size:0.82rem;font-family:'Courier New',monospace;line-height:1.5;}
+.msg-content code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:0.85em;color:#06b6d4;}
+.msg-content h1,.msg-content h2,.msg-content h3{color:#ddd;margin:8px 0 4px;}
+.msg-content ul,.msg-content ol{padding-left:20px;margin:6px 0;}
+.msg-content li{margin:3px 0;}
+.msg-content strong{color:#c4b5fd;}
+.msg-content a{color:#06b6d4;}
+.msg-content p{margin:4px 0;}
+.msg-meta{font-size:0.7rem;color:#555;margin-top:6px;display:flex;gap:12px;}
+.copy-msg{cursor:pointer;color:#555;transition:color 0.2s;}
+.copy-msg:hover{color:#aaa;}
+.typing{display:flex;gap:4px;align-items:center;padding:4px 0;}
+.dot{width:6px;height:6px;background:#7c3aed;border-radius:50%;animation:bounce 1.2s infinite;}
+.dot:nth-child(2){animation-delay:0.2s;}
+.dot:nth-child(3){animation-delay:0.4s;}
+@keyframes bounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-6px);}}
+.attachments-preview{display:flex;gap:8px;flex-wrap:wrap;padding:8px 20px 0;max-width:800px;margin:0 auto;}
+.att-chip{display:flex;align-items:center;gap:6px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:6px 10px;font-size:0.78rem;color:#aaa;}
+.att-chip .remove{cursor:pointer;color:#555;font-size:0.8rem;}
+.att-chip .remove:hover{color:#f87171;}
+.input-area{padding:16px 20px;background:#0d0d0d;border-top:1px solid #1e1e1e;}
+.input-box{max-width:800px;margin:0 auto;background:#141414;border:1px solid #2a2a2a;border-radius:14px;overflow:hidden;transition:border 0.2s;}
+.input-box:focus-within{border-color:#7c3aed55;}
+.input-row{display:flex;align-items:flex-end;padding:8px 8px 8px 14px;gap:8px;}
+textarea#msg-input{flex:1;background:none;border:none;color:#e5e5e5;font-size:0.95rem;font-family:inherit;resize:none;outline:none;min-height:24px;max-height:180px;line-height:1.5;padding:4px 0;}
+textarea#msg-input::placeholder{color:#444;}
+.attach-btn,.send-btn{width:36px;height:36px;border-radius:10px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:all 0.2s;flex-shrink:0;}
+.attach-btn{background:#1e1e1e;color:#888;}
+.attach-btn:hover{background:#252525;color:#aaa;}
+.send-btn{background:#7c3aed;color:#fff;}
+.send-btn:hover{background:#6d28d9;}
+.send-btn:disabled{background:#1e1e1e;color:#444;cursor:not-allowed;}
+.input-hint{font-size:0.7rem;color:#3a3a3a;text-align:center;margin-top:8px;}
+.modal-overlay{display:none;position:fixed;inset:0;background:#000a;z-index:1000;align-items:center;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal{background:#161616;border:1px solid #2a2a2a;border-radius:16px;padding:24px;width:90%;max-width:500px;max-height:80vh;overflow-y:auto;}
+.modal h3{margin-bottom:16px;color:#ddd;font-size:1rem;}
+.modal-close{float:right;background:none;border:none;color:#888;font-size:1.2rem;cursor:pointer;}
+.modal-close:hover{color:#fff;}
+.help-section{margin-bottom:20px;}
+.help-section h4{color:#7c3aed;font-size:0.85rem;margin-bottom:8px;}
+.help-section p,.help-section li{color:#aaa;font-size:0.82rem;line-height:1.6;}
+.help-section ul{padding-left:16px;}
+.help-section code{background:#0d0d0d;padding:2px 6px;border-radius:4px;font-family:monospace;color:#06b6d4;font-size:0.82rem;}
+.msg-img{max-width:100%;border-radius:8px;margin-top:8px;}
+.msg-file{display:inline-flex;align-items:center;gap:6px;background:#0d0d0d;border:1px solid #252525;padding:8px 12px;border-radius:8px;font-size:0.8rem;color:#aaa;margin-top:8px;}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:4px;}
+.menu-toggle{display:none;background:none;border:none;color:#aaa;font-size:1.2rem;cursor:pointer;padding:4px;}
+@media(max-width:640px){
+  .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:200;transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .menu-toggle{display:block;}
+  .suggestions{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-top">
+    <div class="logo-small">⚡ NexusAI</div>
+    <button class="new-chat-btn" onclick="newChat()"><span>✏️</span> Chat Baru</button>
+  </div>
+  <div class="chat-history" id="chat-history">
+    <div class="sidebar-label">Riwayat Chat</div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="avatar" id="user-avatar">?</div>
+      <div class="user-details">
+        <div class="name" id="user-name-display">...</div>
+        <div class="uid" id="user-id-display">ID: ...</div>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="logout()">🚪 Keluar</button>
+  </div>
+</div>
+<div class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:10px">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      <span class="topbar-title" id="chat-title">NexusAI</span>
+    </div>
+    <div>
+      <button class="icon-btn" onclick="showHelp()">❓ /help</button>
+      <button class="icon-btn" onclick="saveChat()">/save</button>
+    </div>
+  </div>
+  <div class="chat-area" id="chat-area">
+    <div class="welcome" id="welcome-screen">
+      <h2>Halo! Saya NexusAI ⚡</h2>
+      <p>AI Cerdas — Coding, Belajar, Cek Link, dan lebih!</p>
+      <div class="suggestions">
+        <button class="sug-btn" onclick="quickSend('Ajarin saya Python dari dasar')"><span class="sug-icon">🐍</span>Ajarin saya Python dari dasar</button>
+        <button class="sug-btn" onclick="quickSend('Bikin website simple HTML CSS JS')"><span class="sug-icon">🌐</span>Bikin website HTML CSS JS</button>
+        <button class="sug-btn" onclick="quickSend('Jelaskan cara kerja AI secara mudah')"><span class="sug-icon">🤖</span>Jelaskan cara kerja AI</button>
+        <button class="sug-btn" onclick="quickSend('Cek link ini apakah aman atau tidak')"><span class="sug-icon">🔗</span>Cek link apakah aman</button>
+      </div>
+    </div>
+  </div>
+  <div id="att-preview" class="attachments-preview"></div>
+  <div class="input-area">
+    <div class="input-box">
+      <div class="input-row">
+        <textarea id="msg-input" placeholder="Ketik pesan... (Enter kirim, Shift+Enter baris baru)" rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <div style="display:flex;gap:4px;flex-shrink:0;">
+          <button class="attach-btn" onclick="document.getElementById('file-input').click()" title="Lampirkan file">📎</button>
+          <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+      </div>
+    </div>
+    <p class="input-hint">Ketik /save simpan chat • /help bantuan • 📎 untuk lampir foto/video/file</p>
+    <input type="file" id="file-input" multiple accept="image/*,video/*,.pdf,.txt,.js,.py,.html,.css,.json,.csv,.md" style="display:none" onchange="handleFiles(event)">
+  </div>
+</div>
+<div class="modal-overlay" id="help-modal" onclick="if(event.target===this)closeHelp()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeHelp()">✕</button>
+    <h3>📖 Panduan NexusAI</h3>
+    <div class="help-section">
+      <h4>⌨️ Perintah</h4>
+      <ul>
+        <li><code>/save</code> — Simpan percakapan ke file .txt</li>
+        <li><code>/help</code> — Tampilkan panduan ini</li>
+        <li><code>/new</code> — Chat baru</li>
+        <li><code>/clear</code> — Hapus chat ini</li>
+      </ul>
+    </div>
+    <div class="help-section">
+      <h4>📎 File Didukung</h4>
+      <ul>
+        <li>🖼️ Foto — JPG, PNG, GIF, WebP</li>
+        <li>🎬 Video — MP4, MOV, AVI</li>
+        <li>📄 Dokumen — PDF, TXT, MD</li>
+        <li>💻 Kode — JS, PY, HTML, CSS, JSON</li>
+      </ul>
+    </div>
+    <div class="help-section">
+      <h4>🧠 Kemampuan AI</h4>
+      <ul>
+        <li>Python, JavaScript, HTML/CSS, dan 50+ bahasa</li>
+        <li>Analisis & cek keamanan URL/link</li>
+        <li>Matematika, Fisika, Kimia, Biologi, Sejarah</li>
+        <li>Tulis cerita, puisi, artikel</li>
+        <li>Buat website, app, komponen UI</li>
+        <li>Brainstorm, ide bisnis, rencana proyek</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<script>
+const session=JSON.parse(localStorage.getItem('nexusai_session')||'null');
+if(!session)window.location.href='index.html';
+const userName=session?.username||'User';
+const userID=session?.id||'????';
+document.getElementById('user-avatar').textContent=userName[0].toUpperCase();
+document.getElementById('user-name-display').textContent=userName;
+document.getElementById('user-id-display').textContent='ID: '+userID;
+
+let currentChatId=null,currentMessages=[],attachments=[],isTyping=false;
+
+function getAllChats(){return JSON.parse(localStorage.getItem('nexusai_chats_'+userID)||'{}');}
+function saveAllChats(c){localStorage.setItem('nexusai_chats_'+userID,JSON.stringify(c));}
+function genChatId(){return 'chat_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);}
+function saveCurrent(){
+  if(!currentChatId||!currentMessages.length)return;
+  const chats=getAllChats();
+  const title=currentMessages[0]?.content?.slice(0,40)||'Chat Baru';
+  chats[currentChatId]={id:currentChatId,title,messages:currentMessages,updated:Date.now()};
+  saveAllChats(chats);renderHistory();
+}
+function renderHistory(){
+  const chats=getAllChats();
+  const c=document.getElementById('chat-history');
+  const sorted=Object.values(chats).sort((a,b)=>b.updated-a.updated);
+  let html='<div class="sidebar-label">Riwayat Chat</div>';
+  if(!sorted.length)html+='<div style="color:#444;font-size:0.78rem;padding:8px 12px">Belum ada chat</div>';
+  sorted.forEach(ch=>{
+    html+=`<div class="history-item${ch.id===currentChatId?' active':''}" onclick="loadChat('${ch.id}')">
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">💬 ${escHtml(ch.title)}</span>
+      <button class="del-btn" onclick="deleteChat(event,'${ch.id}')">✕</button>
+    </div>`;
+  });
+  c.innerHTML=html;
+}
+function deleteChat(e,id){
+  e.stopPropagation();
+  const chats=getAllChats();delete chats[id];saveAllChats(chats);
+  if(currentChatId===id)newChat();else renderHistory();
+}
+function loadChat(id){
+  const chats=getAllChats();if(!chats[id])return;
+  currentChatId=id;currentMessages=chats[id].messages||[];
+  document.getElementById('welcome-screen')?.remove();
+  document.getElementById('chat-title').textContent=chats[id].title;
+  const area=document.getElementById('chat-area');area.innerHTML='';
+  currentMessages.forEach(m=>appendMsgDOM(m.role,m.content,m.files,m.time,false));
+  renderHistory();area.scrollTop=area.scrollHeight;
+  if(window.innerWidth<=640)closeSidebar();
+}
+function newChat(){
+  currentChatId=genChatId();currentMessages=[];attachments=[];
+  document.getElementById('att-preview').innerHTML='';
+  document.getElementById('chat-area').innerHTML=`<div class="welcome" id="welcome-screen">
+    <h2>Halo! Saya NexusAI ⚡</h2>
+    <p>AI Cerdas — Coding, Belajar, Cek Link, dan lebih!</p>
+    <div class="suggestions">
+      <button class="sug-btn" onclick="quickSend('Ajarin saya Python dari dasar')"><span class="sug-icon">🐍</span>Ajarin saya Python dari dasar</button>
+      <button class="sug-btn" onclick="quickSend('Bikin website simple HTML CSS JS')"><span class="sug-icon">🌐</span>Bikin website HTML CSS JS</button>
+      <button class="sug-btn" onclick="quickSend('Jelaskan cara kerja AI secara mudah')"><span class="sug-icon">🤖</span>Jelaskan cara kerja AI</button>
+      <button class="sug-btn" onclick="quickSend('Cek link ini apakah aman atau tidak')"><span class="sug-icon">🔗</span>Cek link apakah aman</button>
+    </div>
+  </div>`;
+  document.getElementById('chat-title').textContent='NexusAI';
+  renderHistory();if(window.innerWidth<=640)closeSidebar();
+}
+async function sendMessage(){
+  const input=document.getElementById('msg-input');
+  const text=input.value.trim();
+  if((!text&&!attachments.length)||isTyping)return;
+  if(text.startsWith('/')){
+    const cmd=text.toLowerCase();
+    if(cmd==='/help'){input.value='';showHelp();return;}
+    if(cmd==='/new'){input.value='';newChat();return;}
+    if(cmd==='/save'){input.value='';saveChat();return;}
+    if(cmd==='/clear'){input.value='';clearCurrentChat();return;}
+  }
+  input.value='';autoResize(input);
+  document.getElementById('welcome-screen')?.remove();
+  const filesCopy=[...attachments];attachments=[];
+  document.getElementById('att-preview').innerHTML='';
+  const time=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+  const msgObj={role:'user',content:text,files:filesCopy,time};
+  currentMessages.push(msgObj);appendMsgDOM('user',text,filesCopy,time,true);saveCurrent();
+  isTyping=true;document.getElementById('send-btn').disabled=true;
+  const typingEl=addTypingIndicator();
+  try{
+    const aiReply=await callAI(text,filesCopy);
+    typingEl.remove();
+    const aiTime=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+    const aiObj={role:'ai',content:aiReply,files:[],time:aiTime};
+    currentMessages.push(aiObj);appendMsgDOM('ai',aiReply,[],aiTime,true);saveCurrent();
+  }catch(e){
+    typingEl.remove();
+    const err='Maaf ada kesalahan: '+e.message;
+    currentMessages.push({role:'ai',content:err,files:[],time:new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})});
+    appendMsgDOM('ai',err,[],new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),true);
+    saveCurrent();
+  }
+  isTyping=false;document.getElementById('send-btn').disabled=false;
+}
+function quickSend(t){document.getElementById('msg-input').value=t;sendMessage();}
+async function callAI(userText,files){
+  const sys=`Kamu adalah NexusAI, asisten AI cerdas berbahasa Indonesia yang sangat membantu.
+Kamu menguasai: Python, JavaScript, TypeScript, Java, C/C++, Go, PHP, dan semua bahasa pemrograman. Web dev: HTML, CSS, React, Vue, Node.js. Database: SQL, MongoDB. AI/ML: Machine Learning, Deep Learning, NLP. Data Science: Pandas, NumPy, TensorFlow. Matematika, Fisika, Kimia, Biologi, Sejarah. Analisis dan cek keamanan URL/link. Kreativitas: cerita, puisi, artikel. Bisnis: strategi, marketing.
+Saat ada link/URL: jelaskan apakah terlihat aman berdasarkan struktur dan domain.
+Gunakan format markdown. Jawab bahasa Indonesia kecuali diminta lain. Selalu ramah dan informatif.`;
+  const apiMsgs=[];
+  currentMessages.slice(-11,-1).forEach(m=>{
+    if(m.role==='user')apiMsgs.push({role:'user',content:m.content||'(file)'});
+    else apiMsgs.push({role:'assistant',content:m.content});
+  });
+  let content=[];
+  if(userText)content.push({type:'text',text:userText});
+  files.forEach(f=>{
+    if(f.type?.startsWith('image/')&&f.data){
+      content.push({type:'image',source:{type:'base64',media_type:f.type,data:f.data}});
+    }else if(f.text){
+      content.push({type:'text',text:`[File: ${f.name}]\n\`\`\`\n${f.text}\n\`\`\``});
+    }else{
+      content.push({type:'text',text:`[File: ${f.name} (${f.type})]`});
+    }
+  });
+  if(!content.length)content.push({type:'text',text:'(file dikirim)'});
+  apiMsgs.push({role:'user',content:content.length===1&&content[0].type==='text'?content[0].text:content});
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:sys,messages:apiMsgs})
+  });
+  if(!resp.ok){const err=await resp.json();throw new Error(err.error?.message||'Error '+resp.status);}
+  const data=await resp.json();
+  return data.content.map(b=>b.text||'').join('');
+}
+function appendMsgDOM(role,content,files,time,scroll){
+  const area=document.getElementById('chat-area');
+  const div=document.createElement('div');div.className='message '+role;
+  const av=role==='user'?`<div class="msg-avatar">${userName[0].toUpperCase()}</div>`:`<div class="msg-avatar">⚡</div>`;
+  let filesHTML='';
+  files?.forEach(f=>{
+    if(f.type?.startsWith('image/')&&f.url)filesHTML+=`<img src="${f.url}" class="msg-img" alt="${escHtml(f.name)}">`;
+    else if(f.type?.startsWith('video/')&&f.url)filesHTML+=`<video controls class="msg-img" style="max-height:200px"><source src="${f.url}" type="${f.type}"></video>`;
+    else if(f.name)filesHTML+=`<div class="msg-file">📄 ${escHtml(f.name)}</div>`;
+  });
+  const fc=role==='ai'?formatAI(content):`<p>${escHtml(content).replace(/\n/g,'<br>')}</p>`;
+  const safeContent=content.replace(/\\/g,'\\\\').replace(/`/g,"'");
+  div.innerHTML=`${av}<div style="flex:1"><div class="msg-content">${filesHTML}${fc}</div><div class="msg-meta"><span>${time}</span><span class="copy-msg" onclick="copyText(this,\`${safeContent}\`)">📋 Salin</span></div></div>`;
+  area.appendChild(div);if(scroll)area.scrollTop=area.scrollHeight;
+}
+function formatAI(text){
+  let t=escHtml(text);
+  t=t.replace(/```(\w*)\n?([\s\S]*?)```/g,(_,lang,code)=>`<pre><code>${code}</code></pre>`);
+  t=t.replace(/`([^`]+)`/g,'<code>$1</code>');
+  t=t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  t=t.replace(/\*(.+?)\*/g,'<em>$1</em>');
+  t=t.replace(/^### (.+)$/gm,'<h3>$1</h3>');
+  t=t.replace(/^## (.+)$/gm,'<h2>$1</h2>');
+  t=t.replace(/^# (.+)$/gm,'<h1>$1</h1>');
+  t=t.replace(/^- (.+)$/gm,'<li>$1</li>');
+  t=t.replace(/^\d+\. (.+)$/gm,'<li>$1</li>');
+  t=t.replace(/\[(.+?)\]\((https?:\/\/[^\)]+)\)/g,'<a href="$2" target="_blank">$1</a>');
+  t=t.split('\n').map(line=>{
+    if(line.startsWith('<h')||line.startsWith('<li')||line.startsWith('<pre')||!line.trim())return line;
+    return`<p>${line}</p>`;
+  }).join('\n');
+  return t;
+}
+function addTypingIndicator(){
+  const area=document.getElementById('chat-area');
+  const div=document.createElement('div');div.className='message ai';
+  div.innerHTML=`<div class="msg-avatar">⚡</div><div class="msg-content" style="padding:14px"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+  area.appendChild(div);area.scrollTop=area.scrollHeight;return div;
+}
+function handleFiles(e){
+  Array.from(e.target.files).forEach(file=>{
+    const reader=new FileReader();
+    if(file.type.startsWith('image/')){
+      reader.onload=ev=>{
+        const data=ev.target.result.split(',')[1];
+        attachments.push({name:file.name,type:file.type,data,url:ev.target.result});renderAttPrev();
+      };reader.readAsDataURL(file);
+    }else if(file.type.startsWith('video/')){
+      reader.onload=ev=>{attachments.push({name:file.name,type:file.type,url:ev.target.result});renderAttPrev();};
+      reader.readAsDataURL(file);
+    }else{
+      reader.onload=ev=>{attachments.push({name:file.name,type:file.type,text:ev.target.result});renderAttPrev();};
+      reader.readAsText(file);
+    }
+  });e.target.value='';
+}
+function renderAttPrev(){
+  document.getElementById('att-preview').innerHTML=attachments.map((f,i)=>`
+    <div class="att-chip">${f.type?.startsWith('image/')?'🖼️':f.type?.startsWith('video/')?'🎬':'📄'} ${escHtml(f.name)}
+    <span class="remove" onclick="removeAtt(${i})">✕</span></div>`).join('');
+}
+function removeAtt(i){attachments.splice(i,1);renderAttPrev();}
+function saveChat(){
+  if(!currentMessages.length){alert('Belum ada chat!');return;}
+  let txt=`=== NexusAI Chat Export ===\nUser: ${userName} (${userID})\nWaktu: ${new Date().toLocaleString('id-ID')}\n${'='.repeat(40)}\n\n`;
+  currentMessages.forEach(m=>{txt+=`[${m.role==='user'?userName:'NexusAI'}] ${m.time||''}\n${m.content}\n\n`;});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));
+  a.download=`nexusai_${new Date().toISOString().slice(0,10)}.txt`;a.click();
+}
+function clearCurrentChat(){if(!confirm('Hapus semua pesan?'))return;currentMessages=[];newChat();}
+function escHtml(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function copyText(btn,text){navigator.clipboard.writeText(text).then(()=>{btn.textContent='✅ Disalin!';setTimeout(()=>btn.textContent='📋 Salin',2000);});}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,180)+'px';}
+function showHelp(){document.getElementById('help-modal').classList.add('show');}
+function closeHelp(){document.getElementById('help-modal').classList.remove('show');}
+function logout(){localStorage.removeItem('nexusai_session');window.location.href='index.html';}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');}
+newChat();renderHistory();
+</script>
+</body>
+  </html>
